@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matura Trainer</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#6b6a66;--ac:#2f5fd0;--ok:#1f8a4c;--bad:#c23b3b;--ln:#dedcd5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181b;--card:#222428;--tx:#f0efeb;--mut:#9a9992;--ac:#7ea2ff;--ok:#4cc882;--bad:#ff7a7a;--ln:#383a40;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17181b;--card:#222428;--tx:#f0efeb;--mut:#9a9992;--ac:#7ea2ff;--ok:#4cc882;--bad:#ff7a7a;--ln:#383a40;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{max-width:480px;margin:0 auto;padding:44px 16px 32px}
+.lg{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(12px,calc(50% - 228px));z-index:5;display:flex;padding:0;overflow:hidden;border:1px solid var(--ln);border-radius:20px;background:var(--card);color:var(--mut);font:600 12px system-ui,sans-serif;cursor:pointer}
+.lg span{padding:5px 10px}.lg .on{background:var(--ac);color:#fff}
+h1{font-size:26px;margin:12px 0 4px}h2{font-size:20px;margin:8px 0 12px}
+.mut{color:var(--mut);font-size:14px}
+.btn{display:block;width:100%;box-sizing:border-box;padding:16px;margin:12px 0;border:1px solid var(--ln);border-radius:14px;background:var(--card);color:var(--tx);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.btn small{display:block;font-weight:400;color:var(--mut);margin-top:2px}
+.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}.btn.p small{color:#e6ecff}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.s{padding:10px 14px;margin:6px 0}
+.bar{height:6px;background:var(--ln);border-radius:3px;margin:8px 0 16px}.bar i{display:block;height:100%;background:var(--ac);border-radius:3px}
+#stage{position:relative;height:300px;margin:8px 0}
+.card{position:absolute;inset:0;background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:22px;box-sizing:border-box;touch-action:none;user-select:none;display:flex;flex-direction:column;justify-content:center;gap:12px;transition:transform .18s}
+.chip{align-self:flex-start;background:var(--bg);border:1px solid var(--ln);border-radius:20px;padding:3px 12px;font-weight:700;color:var(--ac)}
+.sent{font-size:22px;line-height:1.35}.ru{color:var(--mut)}
+.hint{position:absolute;font-weight:700;opacity:0;font-size:15px;padding:4px 10px;border-radius:8px;background:var(--ac);color:#fff}
+#hR{right:12px;top:12px}#hL{left:12px;top:12px}#hU{left:50%;transform:translateX(-50%);top:12px}
+.row{display:flex;gap:8px}.row .btn{margin:6px 0;text-align:center;padding:12px 4px}
+.res{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--ln)}
+.ok{color:var(--ok);font-weight:700}.no{color:var(--bad);font-weight:700}
+.big{font-size:44px;font-weight:700;margin:6px 0}
+input,textarea{width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid var(--ln);border-radius:12px;background:var(--card);color:var(--tx);margin:8px 0}
+input{font-size:18px}textarea{height:240px;resize:vertical}
+.box{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin:8px 0}
+details{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:12px 14px;margin:10px 0}summary{font-weight:600;cursor:pointer}
+.rec{border:2px solid var(--ac)}.lb{color:var(--ac);font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.04em;margin:0 0 4px!important}
+.tpl{margin-top:10px;line-height:1.6;font-size:15px}.ck{margin:4px 0;font-size:15px}
+</style>
+</head>
+<body>
+<button class="lg" id="lg" aria-label="Language"><span data-l="ru">RU</span><span data-l="pl">PL</span></button>
+<div id="app"></div>
+<script>
+// g = -ing, t = to + verb, b = bare infinitive (no to, no -ing)
+const D=[
+["mind","Do you mind ___ (open) the window?","Вы не против открыть окно?","g"],
+["can’t stand","My mum can’t stand ___ (watch) horror movies.","Моя мама терпеть не может смотреть ужастики.","g"],
+["enjoy","I enjoy ___ (listen) to audiobooks.","Мне нравится слушать аудиокниги.","g"],
+["avoid","I try to avoid ___ (eat) junk food.","Я стараюсь избегать фастфуда.","g"],
+["give up","When did you give up ___ (eat) meat?","Когда ты бросил есть мясо?","g"],
+["look forward to","I look forward to ___ (see) you.","Жду не дождусь встречи с тобой.","g"],
+["be afraid of","He is afraid of ___ (fly).","Он боится летать.","g"],
+["be interested in","She is interested in ___ (learn) Polish.","Ей интересно изучать польский.","g"],
+["finish","I finished ___ (write) the essay.","Я закончил писать эссе.","g"],
+["no point in","There’s no point in ___ (complain) about the rain.","Нет смысла жаловаться на дождь.","g"],
+["be worth","Is it worth ___ (visit) this restaurant?","Стоит ли посетить этот ресторан?","g"],
+["suggest","He suggested ___ (go) to the cinema.","Он предложил сходить в кино.","g"],
+["spend time","We spend weekends ___ (watch) TV.","Мы проводим выходные у телевизора.","g"],
+["be keen on","They are keen on ___ (travel) abroad.","Они увлечены путешествиями за границу.","g"],
+["be good at","Anna is good at ___ (draw).","Анна хорошо рисует.","g"],
+["seem","Joe seems ___ (be) hopeless at maths.","Джо, похоже, безнадёжен в математике.","t"],
+["decide","They decided ___ (move) house.","Они решили переехать.","t"],
+["hope","We hope ___ (see) you soon.","Мы надеемся скоро тебя увидеть.","t"],
+["try (стараться)","Do you try ___ (keep) your room tidy?","Ты стараешься держать комнату в порядке?","t"],
+["afford","I can’t afford ___ (buy) a car.","Я не могу позволить себе машину.","t"],
+["refuse","He refused ___ (pay) for the ticket.","Он отказался платить за билет.","t"],
+["promise","She promised ___ (call) me.","Она пообещала мне позвонить.","t"],
+["need","Mary needs ___ (revise) for her exam.","Мэри нужно повторить к экзамену.","t"],
+["ought","You ought ___ (talk) it through with your partner.","Тебе стоит обсудить это с партнёром.","t"],
+["be likely","The restaurant is likely ___ (attract) attention.","Ресторан, скорее всего, привлечёт внимание.","t"],
+["manage","He managed ___ (finish) on time.","Ему удалось закончить вовремя.","t"],
+["forget (не сделать)","I forgot ___ (send) an invitation to Frank.","Я забыл отправить Фрэнку приглашение.","t"],
+["plan","They plan ___ (open) a shop.","Они планируют открыть магазин.","t"],
+["can","She can ___ (swim) very well.","Она очень хорошо плавает.","b"],
+["must","You must ___ (wear) a uniform.","Вы обязаны носить форму.","b"],
+["should","You should ___ (see) a doctor.","Тебе стоит сходить к врачу.","b"],
+["let","My parents let me ___ (stay) out late.","Родители разрешают мне поздно гулять.","b"],
+["had better","You’d better ___ (not / be) late.","Лучше тебе не опаздывать.","b"],
+["make (заставить)","The film made me ___ (cry).","Фильм заставил меня плакать.","b"],
+["would rather","I’d rather ___ (stay) at home.","Я лучше останусь дома.","b"],
+["might","Dad might ___ (go) fishing.","Папа, возможно, пойдёт на рыбалку.","b"]
+];
+const L={g:"-ing",t:"to + глагол",b:"голый инфинитив"};
+const app=document.getElementById("app");
+let S={best:null,last:null,played:0,wrong:{},stat:{},draft:"",lang:"ru"};
+try{const r=localStorage.getItem("mt1");if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+function save(){try{localStorage.setItem("mt1",JSON.stringify(S))}catch(e){}}
+function pick(n){ // weighted: words you missed come up more often
+  const pool=D.map(d=>({d,w:1+2*(S.wrong[d[0]]||0)}));const out=[];
+  while(out.length<n&&pool.length){let t=pool.reduce((a,p)=>a+p.w,0),r=Math.random()*t,i=0;
+    for(;i<pool.length-1;i++){r-=pool[i].w;if(r<=0)break}
+    out.push(pool.splice(i,1)[0].d)}
+  return out}
+function play(){
+  const q=pick(10),res=[];let i=0,busy=false;
+  function show(){
+    app.innerHTML=`<div class="mut">Карточка ${i+1} из 10</div><div class="bar"><i style="width:${i*10}%"></i></div>
+    <div id="stage"><div class="card" id="c"><span class="hint" id="hL">to</span><span class="hint" id="hU">без to</span><span class="hint" id="hR">-ing</span>
+    <span class="chip">${q[i][0]}</span><div class="sent">${q[i][1]}</div><div class="ru">${q[i][2]}</div></div></div>
+    <div class="mut" style="text-align:center">← to · ↑ без to · → -ing</div>
+    <div class="row"><button class="btn" data-a="t">← to</button><button class="btn" data-a="b">↑ без to</button><button class="btn" data-a="g">-ing →</button></div>`;
+    const c=document.getElementById("c");let sx,sy,drag=false;
+    c.onpointerdown=e=>{drag=true;sx=e.clientX;sy=e.clientY;c.style.transition="none";c.setPointerCapture(e.pointerId)};
+    c.onpointermove=e=>{if(!drag)return;const dx=e.clientX-sx,dy=e.clientY-sy;
+      c.style.transform=`translate(${dx}px,${Math.min(dy,0)}px) rotate(${dx/20}deg)`;
+      const up=dy<-40&&Math.abs(dy)>Math.abs(dx);
+      document.getElementById("hR").style.opacity=!up&&dx>30?Math.min(dx/90,1):0;
+      document.getElementById("hL").style.opacity=!up&&dx<-30?Math.min(-dx/90,1):0;
+      document.getElementById("hU").style.opacity=up?Math.min(-dy/90,1):0};
+    c.onpointerup=e=>{if(!drag)return;drag=false;c.style.transition="";
+      const dx=e.clientX-sx,dy=e.clientY-sy;
+      if(dy<-90&&Math.abs(dy)>Math.abs(dx))ans("b");else if(dx>90)ans("g");else if(dx<-90)ans("t");
+      else{c.style.transform="";["hR","hL","hU"].forEach(h=>document.getElementById(h).style.opacity=0)}};
+    app.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>ans(b.dataset.a))}
+  function ans(a){
+    if(busy)return;busy=true;const d=q[i],ok=a===d[3];
+    res.push({d,a,ok});stat("G",ok);
+    if(!ok)S.wrong[d[0]]=(S.wrong[d[0]]||0)+1;else if(S.wrong[d[0]])S.wrong[d[0]]--;
+    const c=document.getElementById("c");
+    c.style.transform=a==="g"?"translateX(400px)":a==="t"?"translateX(-400px)":"translateY(-400px)";
+    setTimeout(()=>{i++;busy=false;
+      if(i===5)checkpoint(res.slice(0,5),show);else if(i===10)final();else show()},180)}
+  function rows(arr){return arr.map(r=>`<div class="res"><span class="${r.ok?"ok":"no"}">${r.ok?"✓":"✗"}</span><div><b>${r.d[0]}</b> → ${L[r.d[3]]}<br>
+    <span class="ru">${r.d[1].replace("___","<u>___</u>")}<br>${r.d[2]}${r.ok?"":"<br>Ты выбрал: "+L[r.a]}</span></div></div>`).join("")}
+  function checkpoint(arr,next){const n=arr.filter(r=>r.ok).length;
+    app.innerHTML=`<h2>Проверка: ${n} из 5</h2>${rows(arr)}<button class="btn p" id="nx">Дальше</button>`;
+    document.getElementById("nx").onclick=next}
+  function final(){const n=res.filter(r=>r.ok).length;
+    S.last=n;S.played++;if(S.best==null||n>S.best)S.best=n;save();
+    app.innerHTML=`<h2>Результат</h2><div class="big">${n} / 10</div>
+    <div><span class="ok">Верно: ${n}</span> · <span class="no">Неверно: ${10-n}</span></div>
+    ${rows(res.filter(r=>!r.ok))||""}
+    <button class="btn p" id="again">Ещё раунд</button><button class="btn" id="hm">В меню</button>`;
+    document.getElementById("again").onclick=play;document.getElementById("hm").onclick=home}
+  show()}
+const T={P:"Пассив",M:"Модальные в прошедшем",G:"Герундий и инфинитив",C:"Условные, would rather",W:"Словообразование",V:"Конструкции, лексика, линкеры"};
+// [тема, задание, допустимые ответы, макс. слов, объяснение]
+const X=[
+["P","[BEING] I received an urgent call while the main course ___.","was being served|was being served by them|was being delivered|was being brought",5,"Past Continuous в пассиве: was/were + being + V3."],
+["C","[RATHER] I’d ___ the presentation to me by 10 p.m.","rather you sent|rather that you sent|rather you send|rather you did send|rather have you send",5,"I’d rather + подлежащее + Past Simple: «я бы предпочёл, чтобы ты отправил»."],
+["G","[ACCUSED] She ___ the room without her permission.","accused John of entering|accused him of entering|accused John of having entered|accused him of having entered|accused John of coming into|accused John of going into",5,"accuse somebody OF + -ing."],
+["M","[MUST] I can’t find my phone – I ___ it on the table in the café.","must have left|must’ve left",5,"must have + V3: уверенный вывод о прошлом («наверное, оставил»)."],
+["P","(be / not / inform) Since we ___ the change of location yesterday, we won’t get there on time.","weren’t informed of|weren’t informed about|were not informed of|were not informed about",5,"Пассив в Past Simple + предлог: be informed OF/ABOUT."],
+["V","(be / like / continue) Rising temperatures melt polar ice, and the process ___.","is likely to continue|is very likely to continue|is most likely to continue|will be likely to continue",5,"be likely + to + инфинитив."],
+["G","(talk / Peter / idea) I think we should stop ___. We have discussed it long enough.","talking about Peter’s idea|talking over Peter’s idea",5,"stop + -ing (прекратить действие); talk ABOUT something."],
+["C","(deal / problem) If I were one of the organizers, I ___ first thing tomorrow morning.","would deal with the problem|would deal with this problem|would deal with that problem|could deal with the problem|might deal with the problem",5,"Второе условное: If + Past Simple, would + инфинитив. deal WITH."],
+["G","(be / involve / organize) Last year, Jack ___ a campaign to protect penguins.","was involved in organizing|was involved in organising",4,"be involved IN + -ing."],
+["M","(take / umbrella) He got soaked. He should ___ before he set off.","have taken an umbrella|have taken his umbrella|have taken the umbrella",4,"should have + V3: надо было (но не сделал)."],
+["G","(find / easy) Nobody managed ___ solution than Susan.","to find an easier",4,"manage + to + инфинитив; easy → easier."],
+["V","(be / order) She wanted to take the lift, but it ___ that day.","was out of order|wasn’t in working order|was not in working order",4,"Устойчивое выражение: out of order = «не работает»."],
+["P","(be / now / build) A new department store ___ in the city centre.","is now being built",4,"Present Continuous в пассиве: is + being + V3."],
+["M","(can / not / be) They ___ home last night. The lights were out.","can’t have been|cannot have been|couldn’t have been",4,"can’t have + V3: уверен, что этого не было."],
+["V","(need / renovation) Our flat is ___.","in need of renovation",4,"be IN NEED OF + существительное."]];
+const W=[
+["A new estate in an old ___ zone of Stockholm. (INDUSTRY)","industrial|post-industrial|postindustrial|industrialised|industrialized","Нужно прилагательное: industry → industrial."],
+["The wood gives the material extra ___. (STRONG)","strength|strengths","Ловушка орфографии: strength, не strenght."],
+["More facilities in the immediate ___. (NEIGHBOUR)","neighbourhood|neighborhood","neighbour + hood. Не neighbours и не neighbouring."],
+["Studies found that it ___ reduces stress. (GRADUAL)","gradually","Наречие: gradual + ly = gradually."],
+["The truth ___ the colours of a polar bear is complex. (CONCERN)","concerning","concerning = «относительно» (как предлог)."],
+["The black skin is ___ seen only on the nose. (CLEAR)","clearly","Наречие: clear + ly."],
+["Black skin is of great ___ to the bears. (IMPORTANT)","importance","Существительное: -ance, не -ence."],
+["Protection against ___ UV radiation. (HARM)","harmful","harm + ful (одна l)."],
+["Pictures were ___ shared on social media. (WIDE)","widely","Наречие: wide + ly."],
+["Their ___ to salt is well-known. (ADDICT)","addiction","Существительное: addict → addiction."],
+["Salt is used to ___ drivers’ safety. (SURE)","ensure|insure|assure","Глагол: sure → ensure («обеспечить»)."],
+["Moose have a ___ for licking cars. (PREFER)","preference","prefer → preference (-ence)."]];
+const Q=[
+["V","Players have six ___ to guess a five-letter word.",["measures","contests","challenges","attempts"],3,"attempt = попытка. Остальные слова по смыслу не подходят."],
+["V","___ how quickly Wordle became an obsession, Josh decided to release it online.",["Having been seen","Seeing","Being seen","To be seeing"],1,"Seeing how… = «видя, как…». Причастный оборот причины."],
+["V","Josh knew that ___ you restrict something, people tend to desire it more.",["whenever","whether","whatever","whereas"],0,"whenever = «всякий раз, когда»."],
+["C","If all these words had been used, it ___ guessing them nearly impossible.",["used to make","would have made","made","had made"],1,"Третье условное: If + had V3, would have + V3."],
+["V","___ Wordle is now enjoyed around the world, she is proud it was made for her.",["Otherwise","Despite","Although","Besides"],2,"Although + целое предложение. Despite требует существительного или -ing."],
+["V","It’s no ___ that sandwiches are a popular lunch choice.",["chance","reason","wonder","possibility"],2,"no wonder = «неудивительно»."],
+["P","He ___ two pieces of bread with meat in the middle.",["brought","has brought","was brought","has been brought"],2,"Пассив с косвенным дополнением: «ему принесли»."],
+["V","…when they ___ some information about a man named Joshua Klein.",["came up","came about","came across","came round"],2,"come across = «наткнуться на»."]];
+const ALL_X=X.map((a,i)=>({k:"x",id:"x"+i,t:a[0],p:a[1],a:a[2].split("|"),m:a[3],e:a[4]}));
+const ALL_W=W.map((a,i)=>({k:"w",id:"w"+i,t:"W",p:a[0],a:a[1].split("|"),e:a[2]}));
+const ALL_Q=Q.map((a,i)=>({k:"q",id:"q"+i,t:a[0],p:a[1],o:a[2],i:a[3],e:a[4]}));
+const ALL=[...ALL_X,...ALL_W,...ALL_Q];
+let TM;
+const norm=s=>s.toLowerCase().replace(/[’‘`]/g,"'").replace(/[.!]+$/,"").replace(/\s+/g," ").trim();
+const nw=s=>s?s.split(" ").length:0;
+function stat(t,ok){const a=S.stat[t]||(S.stat[t]=[0,0]);a[1]++;if(ok)a[0]++}
+function wpick(arr,n){const pool=arr.map(d=>({d,w:1+2*(S.wrong[d.id]||0)})),out=[];
+  while(out.length<n&&pool.length){let r=Math.random()*pool.reduce((a,p)=>a+p.w,0),i=0;
+    for(;i<pool.length-1;i++){r-=pool[i].w;if(r<=0)break}out.push(pool.splice(i,1)[0].d)}return out}
+function check(it,v){const s=norm(v);return !!s&&(it.k!=="x"||nw(s)<=it.m)&&it.a.some(a=>norm(a)===s)}
+function run(gen,title,exam){
+  const items=gen();let i=0;const log=[],t0=Date.now();clearInterval(TM);
+  if(exam)TM=setInterval(()=>{const e=document.getElementById("tm"),s=Math.floor((Date.now()-t0)/1000);if(e)e.textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0")},500);
+  function next(){i++;i<items.length?show():end()}
+  function done(it,ok,given){log.push({it,ok,given});stat(it.t,ok);
+    if(!ok)S.wrong[it.id]=(S.wrong[it.id]||0)+1;else if(S.wrong[it.id])S.wrong[it.id]--;
+    save();exam?next():fb(it,ok,given)}
+  function good(it){return it.k==="q"?it.o[it.i]:it.a[0]}
+  function fb(it,ok,given){
+    const long=!ok&&it.k==="x"&&nw(norm(given||""))>it.m;
+    app.innerHTML=`<h2 class="${ok?"ok":"no"}">${ok?"Верно":"Неверно"}</h2>${ok?"":`<div class="mut">Твой ответ: ${given||"—"}</div>`}
+    ${long?`<div class="no">Больше ${it.m} слов: на экзамене такой ответ не засчитывается.</div>`:""}
+    <div class="sent" style="margin:10px 0"><b>${good(it)}</b></div>
+    ${it.k!=="q"&&it.a.length>1?`<div class="mut">Тоже верно: ${it.a.slice(1,3).join(" / ")}</div>`:""}
+    <div class="ru" style="margin:12px 0;color:var(--tx)">${it.e}</div><button class="btn p" id="nx">Дальше</button>`;
+    const b=document.getElementById("nx");b.onclick=next;b.focus()}
+  function show(){const it=items[i];
+    app.innerHTML=`<div class="mut">${title} · ${i+1} из ${items.length}${exam?' · <span id="tm"></span>':""}</div><div class="bar"><i style="width:${i/items.length*100}%"></i></div>
+    <span class="chip">${T[it.t]}</span><div class="sent" style="margin:14px 0">${it.p.replace("___","<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>")}</div>
+    ${it.k==="q"?it.o.map((o,j)=>`<button class="btn" data-j="${j}">${"ABCD"[j]}. ${o}</button>`).join(""):
+    `<div class="mut">${it.k==="x"?"Впиши фразу в пропуск. Максимум слов: "+it.m:"Впиши слово в нужной форме."}</div><input id="in" autocomplete="off" autocapitalize="none" spellcheck="false"><button class="btn p" id="ok">Проверить</button>`}
+    <button class="btn s" id="qt">← В меню</button>`;
+    document.getElementById("qt").onclick=home;
+    if(it.k==="q")app.querySelectorAll("[data-j]").forEach(b=>b.onclick=()=>{const j=+b.dataset.j;done(it,j===it.i,it.o[j])});
+    else{const inp=document.getElementById("in");inp.focus();
+      inp.onkeydown=e=>{if(e.key==="Enter")document.getElementById("ok").click()};
+      document.getElementById("ok").onclick=()=>done(it,check(it,inp.value),inp.value)}}
+  function end(){clearInterval(TM);const n=log.filter(r=>r.ok).length,s=Math.floor((Date.now()-t0)/1000);
+    app.innerHTML=`<h2>Результат</h2><div class="big">${n} / ${items.length}</div>${exam?`<div class="mut">Время: ${Math.floor(s/60)} мин ${s%60} с. Ориентир на экзамене: около 15 минут на эти задания.</div>`:""}
+    ${log.filter(r=>!r.ok).map(r=>`<div class="res"><span class="no">✗</span><div>${r.it.p.replace("___","<u>___</u>")}<br><b>${good(r.it)}</b><br><span class="ru">Твой ответ: ${r.given||"—"}<br>${r.it.e}</span></div></div>`).join("")||'<div class="ok" style="margin:12px 0">Без ошибок.</div>'}
+    ${recs(log)}<button class="btn p" id="again">Ещё раз</button><button class="btn" id="hm">В меню</button>`;
+    app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>topicRun(b.dataset.k));document.getElementById("again").onclick=()=>run(gen,title,exam);document.getElementById("hm").onclick=home}
+  show()}
+const WP=["Всё больше молодёжи путешествует по Европе поездом (матура 2026). Плюсы и минусы.","Занятия в вузах только онлайн (матура 2025). Плюсы и минусы.","Волонтёрство молодёжи на каникулах (матура 2024). Плюсы и минусы."];
+function writing(){
+  const p=WP[Math.floor(Math.random()*WP.length)];
+  app.innerHTML=`<h2>Письмо: rozprawka</h2><div class="box"><span class="chip">Тема</span><div style="margin-top:8px">${p}</div></div>
+  <details><summary>Шаблон и фразы</summary><div class="tpl"><b>Вступление.</b> Nowadays, more and more … . This solution has both advantages and disadvantages.<br>
+  <b>Плюсы.</b> To begin with, … . What is more, … . For instance, … .<br>
+  <b>Минусы.</b> On the other hand, … . In addition, … . As a result, … .<br>
+  <b>Вывод</b> (другими словами, не копируй вступление). All things considered, … outweigh … / On balance, … .<br>
+  <span class="mut">Критерии CKE: тезис во вступлении объявляет плюсы и минусы, 180–280 слов, формальный стиль, абзацы вместо списков.</span></div></details>
+  <textarea id="tx" placeholder="Пиши по-английски. Абзацы отделяй пустой строкой."></textarea><div id="ck"></div>
+  <button class="btn" id="nt">Другая тема</button><button class="btn" id="hm">← В меню</button>`;
+  const tx=document.getElementById("tx");tx.value=S.draft||"";
+  function chk(){const t=tx.value,w=(t.match(/\S+/g)||[]).length,ps=t.split(/\n\s*\n/).filter(x=>x.trim()),f=ps[0]||"",l=ps[ps.length-1]||"";
+    const R=[[w>=180&&w<=280,`Слов: ${w} (допустимо 180–280, цель 200–250)`],[ps.length>=4,`Абзацев: ${ps.length} (минимум 4: вступление, плюсы, минусы, вывод)`],
+    [/advantage|disadvantage|pros|cons|benefit|drawback|upside|downside|good and bad/i.test(f),"Тезис во вступлении объявляет плюсы и минусы"],
+    [/all things considered|to sum up|to conclude|in conclusion|on balance|overall/i.test(l),"Вывод начинается с сигнального слова"],
+    [!/\b(don|can|isn|aren|won|doesn|didn|wasn|it|they|we|you|I)['’](t|s|m|re|d|ll|ve)\b/i.test(t),"Формальный стиль: без сокращений (don’t, it’s…)"]];
+    document.getElementById("ck").innerHTML=R.map(r=>`<div class="ck"><span class="${r[0]?"ok":"no"}">${r[0]?"✓":"○"}</span> ${r[1]}</div>`).join("");
+    S.draft=t;save()}
+  tx.oninput=chk;chk();
+  document.getElementById("nt").onclick=()=>{S.draft="";writing()};document.getElementById("hm").onclick=home}
+const examGen=()=>[...wpick(ALL_X,4),...wpick(ALL_W,4),...wpick(ALL_Q,6)];
+function topicRun(k){const its=ALL.filter(x=>x.t===k);run(()=>wpick(its,Math.min(8,its.length)),T[k])}
+function recs(log){const bad={};log.filter(r=>!r.ok).forEach(r=>bad[r.it.t]=(bad[r.it.t]||0)+1);
+  const ks=Object.keys(bad).sort((a,b)=>bad[b]-bad[a]);
+  return ks.length?`<h2 style="margin-top:20px">Что повторить</h2><div class="mut">По твоим ошибкам. Нажми на тему, чтобы потренировать её.</div>`+ks.map(k=>`<button class="btn" data-k="${k}">${T[k]}<small>Ошибок в этом раунде: ${bad[k]}</small></button>`).join(""):""}
+function best(){
+  const ks=Object.keys(T),n=k=>S.stat[k]?S.stat[k][1]:0,acc=k=>n(k)?S.stat[k][0]/n(k):null;
+  const wr=k=>ALL.filter(x=>x.t===k).reduce((a,x)=>a+(S.wrong[x.id]||0),0);
+  if(!ks.some(k=>n(k)))return{t:"Пройди мини-экзамен",s:"Пока нет данных. Он покажет, какие темы у тебя слабые.",f:()=>run(examGen,"Мини-экзамен",true)};
+  const weak=ks.filter(k=>n(k)>=3&&acc(k)<.75).sort((a,b)=>acc(a)-acc(b)||wr(b)-wr(a));
+  if(weak.length){const k=weak[0];return{t:"Повтори: "+T[k],s:`Верно ${Math.round(acc(k)*100)}%. Сейчас это твоя самая слабая тема.`,f:()=>topicRun(k)}}
+  const fresh=ks.filter(k=>n(k)<3);
+  if(fresh.length)return{t:"Потренируй: "+T[fresh[0]],s:"По этой теме пока мало ответов, чтобы судить.",f:()=>topicRun(fresh[0])};
+  return{t:"Мини-экзамен ещё раз",s:"Все темы выше 75%. Проверь себя на время.",f:()=>run(examGen,"Мини-экзамен",true)}}
+function tmap(){
+  const rows=Object.keys(T).map(k=>{const s=S.stat[k]||[0,0],p=s[1]?Math.round(100*s[0]/s[1]):null;
+    return `<button class="btn" data-k="${k}">${T[k]}<small>${s[1]?p+"% верно · ответов: "+s[1]:"Ещё не тренировалась · нажми, чтобы начать"}</small><div class="bar" style="margin:8px 0 0"><i style="width:${p||0}%;background:${p==null?"var(--ln)":p>=75?"var(--ok)":p>=50?"var(--ac)":"var(--bad)"}"></i></div></button>`}).join("");
+  const weak=Object.entries(S.wrong).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([id,n])=>{const it=ALL.find(x=>x.id===id);
+    return `<div class="res"><span>${it?it.p.slice(0,60)+"…":id}</span><span class="no">×${n}</span></div>`}).join("");
+  app.innerHTML=`<h2>Карта тем</h2><div class="mut">Нажми на тему, чтобы потренировать только её.</div>${rows}<h2>Слабые места</h2>${weak||'<div class="mut">Пока ошибок нет.</div>'}<button class="btn" id="hm">← В меню</button>`;
+  app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const its=ALL.filter(x=>x.t===b.dataset.k);run(()=>wpick(its,Math.min(8,its.length)),T[b.dataset.k])});
+  document.getElementById("hm").onclick=home}
+function home(){clearInterval(TM);const B=best();
+  app.innerHTML=`<h1>Matura Trainer</h1><div class="mut">Английский · задания 7–10 матуры rozszerzone</div>
+  <button class="btn rec" id="rec"><small class="lb">Лучший выбор сейчас</small>${B.t}<small>${B.s}</small></button>
+  <button class="btn p" id="b1">Свайп: -ing, to или без to<small>10 карточек. Лучший результат: ${S.best==null?"—":S.best+"/10"}</small></button>
+  <button class="btn" id="b2">Трансформации: впиши фразу<small>Задание 9 · реальные пункты матур 2024–2026</small></button>
+  <button class="btn" id="b3">Словообразование<small>Задание 8 · печатаешь слово, орфография важна</small></button>
+  <button class="btn" id="b4">Тест как в задании 7<small>Лексика, причастия, условные, линкеры</small></button>
+  <button class="btn" id="b5">Мини-экзамен · 14 баллов<small>4 + 4 + 6 заданий, таймер, ответы в конце</small></button>
+  <button class="btn" id="b6">Письмо: rozprawka<small>Шаблон, счётчик слов, проверка по критериям CKE</small></button>
+  <button class="btn" id="b7">Карта тем<small>Процент верных по темам и слабые места</small></button>`;
+  const go=(id,f)=>document.getElementById(id).onclick=f;
+  go("rec",B.f);go("b1",play);go("b2",()=>run(()=>wpick(ALL_X,8),"Трансформации"));go("b3",()=>run(()=>wpick(ALL_W,6),"Словообразование"));
+  go("b4",()=>run(()=>wpick(ALL_Q,6),"Тест"));
+  go("b5",()=>run(examGen,"Мини-экзамен",true));
+  go("b6",writing);go("b7",tmap)}
+document.addEventListener("keydown",e=>{const m={ArrowRight:"g",ArrowLeft:"t",ArrowUp:"b"}[e.key];
+  if(m){const b=document.querySelector('[data-a="'+m+'"]');if(b){e.preventDefault();b.click()}}});
+// --- Польский интерфейс: подставляется поверх русских текстов, исходник хранится в OR ---
+const SUB=[["Английский · задания 7–10 матуры rozszerzone","Angielski · zadania 7–10 matury rozszerzonej"],["Лучший выбор сейчас","Najlepszy wybór teraz"],["Свайп: -ing, to или без to","Swipe: -ing, to czy bez to"],["10 карточек. Лучший результат: ","10 kart. Najlepszy wynik: "],["Трансформации: впиши фразу","Transformacje: wpisz frazę"],["Задание 9 · реальные пункты матур 2024–2026","Zadanie 9 · prawdziwe pozycje z matur 2024–2026"],["Задание 8 · печатаешь слово, орфография важна","Zadanie 8 · wpisujesz słowo, liczy się ortografia"],["Тест как в задании 7","Test jak w zadaniu 7"],["Лексика, причастия, условные, линкеры","Leksyka, imiesłowy, okresy warunkowe, spójniki"],["Мини-экзамен · 14 баллов","Mini-egzamin · 14 punktów"],["4 + 4 + 6 заданий, таймер, ответы в конце","4 + 4 + 6 zadań, stoper, odpowiedzi na końcu"],["Письмо: rozprawka","Pisanie: rozprawka"],["Шаблон, счётчик слов, проверка по критериям CKE","Szablon, licznik słów, sprawdzanie wg kryteriów CKE"],["Процент верных по темам и слабые места","Procent poprawnych według tematów i słabe punkty"],["Карта тем","Mapa tematów"],["Пройди мини-экзамен","Zrób mini-egzamin"],["Пока нет данных. Он покажет, какие темы у тебя слабые.","Na razie brak danych. Pokaże, które tematy są słabe."],["Повтори: ","Powtórz: "],["Потренируй: ","Poćwicz: "],["Сейчас это твоя самая слабая тема.","To teraz twój najsłabszy temat."],["По этой теме пока мало ответов, чтобы судить.","Z tego tematu jest za mało odpowiedzi, by ocenić."],["Мини-экзамен ещё раз","Mini-egzamin jeszcze raz"],["Все темы выше 75%. Проверь себя на время.","Wszystkie tematy powyżej 75%. Sprawdź się na czas."],["Мини-экзамен","Mini-egzamin"],["Карточка ","Karta "],[" из "," z "],["Проверка: ","Sprawdzian: "],["Дальше","Dalej"],["Результат","Wynik"],["Верно: ","Dobrze: "],["Неверно: ","Źle: "],["Верно ","Poprawnie "],["Ещё раунд","Jeszcze runda"],["В меню","Do menu"],["Ты выбрал: ","Wybrałeś: "],["to + глагол","to + czasownik"],["голый инфинитив","bezokolicznik bez to"],["без to","bez to"],["Максимум слов: ","Maksimum słów: "],["Впиши фразу в пропуск. ","Wpisz frazę w lukę. "],["Впиши слово в нужной форме.","Wpisz słowo w odpowiedniej formie."],["Проверить","Sprawdź"],["Твой ответ: ","Twoja odpowiedź: "],["Больше ","Więcej niż "],["слов: на экзамене такой ответ не засчитывается.","słów: na egzaminie taka odpowiedź nie jest zaliczana."],["Тоже верно: ","Też poprawnie: "],["Время: ","Czas: "],[" мин "," min "],[" с. Ориентир на экзамене: около 15 минут на эти задания."," s. Orientacyjnie na egzaminie: około 15 minut na te zadania."],["Без ошибок.","Bez błędów."],["Ещё раз","Jeszcze raz"],["Что повторить","Co powtórzyć"],["По твоим ошибкам. Нажми на тему, чтобы потренировать её.","Na podstawie twoich błędów. Kliknij temat, żeby go poćwiczyć."],["Ошибок в этом раунде: ","Błędów w tej rundzie: "],["Нажми на тему, чтобы потренировать только её.","Kliknij temat, aby ćwiczyć tylko jego."],["% верно · ответов: ","% poprawnie · odpowiedzi: "],["Ещё не тренировалась · нажми, чтобы начать","Jeszcze nie ćwiczono · kliknij, aby zacząć"],["Слабые места","Słabe punkty"],["Пока ошибок нет.","Na razie brak błędów."],["Шаблон и фразы","Szablon i zwroty"],["Вступление.","Wstęp."],["Плюсы.","Zalety."],["Минусы.","Wady."],["Вывод начинается с сигнального слова","Zakończenie zaczyna się od słowa sygnalizującego"],["(другими словами, не копируй вступление)","(innymi słowami, nie kopiuj wstępu)"],["Вывод","Zakończenie"],["Критерии CKE: тезис во вступлении объявляет плюсы и минусы, 180–280 слов, формальный стиль, абзацы вместо списков.","Kryteria CKE: teza we wstępie zapowiada zalety i wady, 180–280 słów, styl formalny, akapity zamiast list."],["Другая тема","Inny temat"],["Слов: ","Słów: "],["(допустимо 180–280, цель 200–250)","(dozwolone 180–280, cel 200–250)"],["Абзацев: ","Akapitów: "],["(минимум 4: вступление, плюсы, минусы, вывод)","(minimum 4: wstęp, zalety, wady, zakończenie)"],["Тезис во вступлении объявляет плюсы и минусы","Teza we wstępie zapowiada zalety i wady"],["Формальный стиль: без сокращений","Styl formalny: bez skrótów"],["Всё больше молодёжи путешествует по Европе поездом (матура 2026). Плюсы и минусы.","Coraz więcej młodych ludzi podróżuje po Europie koleją (matura 2026). Zalety i wady."],["Занятия в вузах только онлайн (матура 2025). Плюсы и минусы.","Zajęcia na uczelniach tylko online (matura 2025). Zalety i wady."],["Волонтёрство молодёжи на каникулах (матура 2024). Плюсы и минусы.","Wolontariat młodzieży w wakacje (matura 2024). Zalety i wady."],["Пассив","Strona bierna"],["Модальные в прошедшем","Czasowniki modalne w przeszłości"],["Герундий и инфинитив","Gerundium i bezokolicznik"],["Условные, would rather","Okresy warunkowe, would rather"],["Словообразование","Słowotwórstwo"],["Конструкции, лексика, линкеры","Konstrukcje, leksyka, spójniki"],["Трансформации","Transformacje"],["Тест","Test"]].sort((a,b)=>b[0].length-a[0].length);
+const LT=SUB.filter(p=>["Твой ответ: ","Ты выбрал: ","to + глагол","голый инфинитив","без to"].includes(p[0]));
+const EX={"Верно":"Dobrze","Неверно":"Źle","Тема":"Temat"};
+const PH={"Пиши по-английски. Абзацы отделяй пустой строкой.":"Pisz po angielsku. Akapity oddzielaj pustym wierszem."};
+const OR=new WeakMap();
+function tl(s,list){for(const[p,q]of list)if(s.includes(p))s=s.split(p).join(q);return s}
+function xl(){const pl=S.lang==="pl",w=document.createTreeWalker(app,NodeFilter.SHOW_TEXT),ns=[];let n;while(n=w.nextNode())ns.push(n);
+  ns.forEach(n=>{if(!OR.has(n))OR.set(n,n.nodeValue);const o=OR.get(n),t=o.trim();
+    n.nodeValue=!pl?o:EX[t]?o.replace(t,EX[t]):tl(o,n.parentElement&&n.parentElement.closest(".ru")?LT:SUB)});
+  app.querySelectorAll("[placeholder]").forEach(e=>{if(!e.dataset.o)e.dataset.o=e.placeholder;e.placeholder=pl?(PH[e.dataset.o]||e.dataset.o):e.dataset.o});
+  document.documentElement.lang=pl?"pl":"ru";
+  document.querySelectorAll("#lg span").forEach(s=>s.className=s.dataset.l===S.lang?"on":"")}
+new MutationObserver(xl).observe(app,{childList:true,subtree:true});
+document.getElementById("lg").onclick=()=>{S.lang=S.lang==="pl"?"ru":"pl";save();xl()};
+xl();
+home();
+</script>
+</body>
+</html>
