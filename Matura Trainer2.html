@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matura Trainer</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#6b6a66;--ac:#2f5fd0;--ok:#1f8a4c;--bad:#c23b3b;--ln:#dedcd5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181b;--card:#222428;--tx:#f0efeb;--mut:#9a9992;--ac:#7ea2ff;--ok:#4cc882;--bad:#ff7a7a;--ln:#383a40;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17181b;--card:#222428;--tx:#f0efeb;--mut:#9a9992;--ac:#7ea2ff;--ok:#4cc882;--bad:#ff7a7a;--ln:#383a40;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{max-width:480px;margin:0 auto;padding:20px 16px 32px}
+h1{font-size:26px;margin:12px 0 4px}h2{font-size:20px;margin:8px 0 12px}
+.mut{color:var(--mut);font-size:14px}
+.btn{display:block;width:100%;box-sizing:border-box;padding:16px;margin:12px 0;border:1px solid var(--ln);border-radius:14px;background:var(--card);color:var(--tx);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.btn small{display:block;font-weight:400;color:var(--mut);margin-top:2px}
+.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}.btn.p small{color:#e6ecff}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.s{padding:10px 14px;margin:6px 0}
+.bar{height:6px;background:var(--ln);border-radius:3px;margin:8px 0 16px}.bar i{display:block;height:100%;background:var(--ac);border-radius:3px}
+#stage{position:relative;height:300px;margin:8px 0}
+.card{position:absolute;inset:0;background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:22px;box-sizing:border-box;touch-action:none;user-select:none;display:flex;flex-direction:column;justify-content:center;gap:12px;transition:transform .18s}
+.chip{align-self:flex-start;background:var(--bg);border:1px solid var(--ln);border-radius:20px;padding:3px 12px;font-weight:700;color:var(--ac)}
+.sent{font-size:22px;line-height:1.35}.ru{color:var(--mut)}
+.hint{position:absolute;font-weight:700;opacity:0;font-size:15px;padding:4px 10px;border-radius:8px;background:var(--ac);color:#fff}
+#hR{right:12px;top:12px}#hL{left:12px;top:12px}#hU{left:50%;transform:translateX(-50%);top:12px}
+.row{display:flex;gap:8px}.row .btn{margin:6px 0;text-align:center;padding:12px 4px}
+.res{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--ln)}
+.ok{color:var(--ok);font-weight:700}.no{color:var(--bad);font-weight:700}
+.big{font-size:44px;font-weight:700;margin:6px 0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// g = -ing, t = to + verb, b = bare infinitive (no to, no -ing)
+const D=[
+["mind","Do you mind ___ (open) the window?","Вы не против открыть окно?","g"],
+["can’t stand","My mum can’t stand ___ (watch) horror movies.","Моя мама терпеть не может смотреть ужастики.","g"],
+["enjoy","I enjoy ___ (listen) to audiobooks.","Мне нравится слушать аудиокниги.","g"],
+["avoid","I try to avoid ___ (eat) junk food.","Я стараюсь избегать фастфуда.","g"],
+["give up","When did you give up ___ (eat) meat?","Когда ты бросил есть мясо?","g"],
+["look forward to","I look forward to ___ (see) you.","Жду не дождусь встречи с тобой.","g"],
+["be afraid of","He is afraid of ___ (fly).","Он боится летать.","g"],
+["be interested in","She is interested in ___ (learn) Polish.","Ей интересно изучать польский.","g"],
+["finish","I finished ___ (write) the essay.","Я закончил писать эссе.","g"],
+["no point in","There’s no point in ___ (complain) about the rain.","Нет смысла жаловаться на дождь.","g"],
+["be worth","Is it worth ___ (visit) this restaurant?","Стоит ли посетить этот ресторан?","g"],
+["suggest","He suggested ___ (go) to the cinema.","Он предложил сходить в кино.","g"],
+["spend time","We spend weekends ___ (watch) TV.","Мы проводим выходные у телевизора.","g"],
+["be keen on","They are keen on ___ (travel) abroad.","Они увлечены путешествиями за границу.","g"],
+["be good at","Anna is good at ___ (draw).","Анна хорошо рисует.","g"],
+["seem","Joe seems ___ (be) hopeless at maths.","Джо, похоже, безнадёжен в математике.","t"],
+["decide","They decided ___ (move) house.","Они решили переехать.","t"],
+["hope","We hope ___ (see) you soon.","Мы надеемся скоро тебя увидеть.","t"],
+["try (стараться)","Do you try ___ (keep) your room tidy?","Ты стараешься держать комнату в порядке?","t"],
+["afford","I can’t afford ___ (buy) a car.","Я не могу позволить себе машину.","t"],
+["refuse","He refused ___ (pay) for the ticket.","Он отказался платить за билет.","t"],
+["promise","She promised ___ (call) me.","Она пообещала мне позвонить.","t"],
+["need","Mary needs ___ (revise) for her exam.","Мэри нужно повторить к экзамену.","t"],
+["ought","You ought ___ (talk) it through with your partner.","Тебе стоит обсудить это с партнёром.","t"],
+["be likely","The restaurant is likely ___ (attract) attention.","Ресторан, скорее всего, привлечёт внимание.","t"],
+["manage","He managed ___ (finish) on time.","Ему удалось закончить вовремя.","t"],
+["forget (не сделать)","I forgot ___ (send) an invitation to Frank.","Я забыл отправить Фрэнку приглашение.","t"],
+["plan","They plan ___ (open) a shop.","Они планируют открыть магазин.","t"],
+["can","She can ___ (swim) very well.","Она очень хорошо плавает.","b"],
+["must","You must ___ (wear) a uniform.","Вы обязаны носить форму.","b"],
+["should","You should ___ (see) a doctor.","Тебе стоит сходить к врачу.","b"],
+["let","My parents let me ___ (stay) out late.","Родители разрешают мне поздно гулять.","b"],
+["had better","You’d better ___ (not / be) late.","Лучше тебе не опаздывать.","b"],
+["make (заставить)","The film made me ___ (cry).","Фильм заставил меня плакать.","b"],
+["would rather","I’d rather ___ (stay) at home.","Я лучше останусь дома.","b"],
+["might","Dad might ___ (go) fishing.","Папа, возможно, пойдёт на рыбалку.","b"]
+];
+const SOON=[
+["Present Simple и Continuous","stative verbs, always + Continuous · наборы 1, 2"],
+["Past Simple, Past Continuous, used to","while / when, used to и be used to · наборы 2, 3"],
+["Present Perfect и Past Perfect","how long, so far, by the time · наборы 2, 3, 4"],
+["Будущие времена","Future Continuous / Perfect, Present Simple после when · наборы 3, 4"],
+["Модальные глаголы","can’t have been, might, ought, had better, could have · набор 5"],
+["Пассив и have something done","is being built, it is said that, have my car fixed · наборы 3, 7"],
+["Фразовые глаголы","give up, cut down on, run out of, take after · наборы 4, 5, 6, 8"],
+["Предлоги и устойчивые выражения","in charge of, in common, value for money, cup of tea · наборы 1–9"],
+["Количество: much, plenty of, none of","much luggage, plenty of opportunities, hardly · наборы 6, 9"],
+["Сравнения","the more … the more, as … as · набор 9"],
+["so / such и придаточные","so good that, relative clauses, косвенные вопросы, I’d rather you · наборы 8, 9"]
+];
+const L={g:"-ing",t:"to + глагол",b:"голый инфинитив"};
+const app=document.getElementById("app");
+let S={best:null,last:null,played:0,wrong:{}};
+try{const r=localStorage.getItem("mt1");if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+function save(){try{localStorage.setItem("mt1",JSON.stringify(S))}catch(e){}}
+function pick(n){ // weighted: words you missed come up more often
+  const pool=D.map(d=>({d,w:1+2*(S.wrong[d[0]]||0)}));const out=[];
+  while(out.length<n&&pool.length){let t=pool.reduce((a,p)=>a+p.w,0),r=Math.random()*t,i=0;
+    for(;i<pool.length-1;i++){r-=pool[i].w;if(r<=0)break}
+    out.push(pool.splice(i,1)[0].d)}
+  return out}
+function home(){
+  app.innerHTML=`<h1>Matura Trainer</h1><div class="mut">Английский · grammaticalization</div>
+  <button class="btn p" id="b1">Тренировка: -ing или to<small>10 карточек, свайп. Лучший результат: ${S.best==null?"—":S.best+"/10"}</small></button>
+  <button class="btn" id="b2">Карта тем<small>Прогресс и слабые места</small></button>
+  <h2 style="margin-top:24px">Скоро</h2>${SOON.map(s=>`<button class="btn s" disabled>${s[0]}<small>${s[1]} · скоро</small></button>`).join("")}`;
+  document.getElementById("b1").onclick=play;document.getElementById("b2").onclick=map}
+function play(){
+  const q=pick(10),res=[];let i=0,busy=false;
+  function show(){
+    app.innerHTML=`<div class="mut">Карточка ${i+1} из 10</div><div class="bar"><i style="width:${i*10}%"></i></div>
+    <div id="stage"><div class="card" id="c"><span class="hint" id="hL">to</span><span class="hint" id="hU">без to</span><span class="hint" id="hR">-ing</span>
+    <span class="chip">${q[i][0]}</span><div class="sent">${q[i][1]}</div><div class="ru">${q[i][2]}</div></div></div>
+    <div class="mut" style="text-align:center">← to · ↑ без to · → -ing</div>
+    <div class="row"><button class="btn" data-a="t">← to</button><button class="btn" data-a="b">↑ без to</button><button class="btn" data-a="g">-ing →</button></div>`;
+    const c=document.getElementById("c");let sx,sy,drag=false;
+    c.onpointerdown=e=>{drag=true;sx=e.clientX;sy=e.clientY;c.style.transition="none";c.setPointerCapture(e.pointerId)};
+    c.onpointermove=e=>{if(!drag)return;const dx=e.clientX-sx,dy=e.clientY-sy;
+      c.style.transform=`translate(${dx}px,${Math.min(dy,0)}px) rotate(${dx/20}deg)`;
+      const up=dy<-40&&Math.abs(dy)>Math.abs(dx);
+      document.getElementById("hR").style.opacity=!up&&dx>30?Math.min(dx/90,1):0;
+      document.getElementById("hL").style.opacity=!up&&dx<-30?Math.min(-dx/90,1):0;
+      document.getElementById("hU").style.opacity=up?Math.min(-dy/90,1):0};
+    c.onpointerup=e=>{if(!drag)return;drag=false;c.style.transition="";
+      const dx=e.clientX-sx,dy=e.clientY-sy;
+      if(dy<-90&&Math.abs(dy)>Math.abs(dx))ans("b");else if(dx>90)ans("g");else if(dx<-90)ans("t");
+      else{c.style.transform="";["hR","hL","hU"].forEach(h=>document.getElementById(h).style.opacity=0)}};
+    app.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>ans(b.dataset.a))}
+  function ans(a){
+    if(busy)return;busy=true;const d=q[i],ok=a===d[3];
+    res.push({d,a,ok});
+    if(!ok)S.wrong[d[0]]=(S.wrong[d[0]]||0)+1;else if(S.wrong[d[0]])S.wrong[d[0]]--;
+    const c=document.getElementById("c");
+    c.style.transform=a==="g"?"translateX(400px)":a==="t"?"translateX(-400px)":"translateY(-400px)";
+    setTimeout(()=>{i++;busy=false;
+      if(i===5)checkpoint(res.slice(0,5),show);else if(i===10)final();else show()},180)}
+  function rows(arr){return arr.map(r=>`<div class="res"><span class="${r.ok?"ok":"no"}">${r.ok?"✓":"✗"}</span><div><b>${r.d[0]}</b> → ${L[r.d[3]]}<br>
+    <span class="ru">${r.d[1].replace("___","<u>___</u>")}<br>${r.d[2]}${r.ok?"":"<br>Ты выбрал: "+L[r.a]}</span></div></div>`).join("")}
+  function checkpoint(arr,next){const n=arr.filter(r=>r.ok).length;
+    app.innerHTML=`<h2>Проверка: ${n} из 5</h2>${rows(arr)}<button class="btn p" id="nx">Дальше</button>`;
+    document.getElementById("nx").onclick=next}
+  function final(){const n=res.filter(r=>r.ok).length;
+    S.last=n;S.played++;if(S.best==null||n>S.best)S.best=n;save();
+    app.innerHTML=`<h2>Результат</h2><div class="big">${n} / 10</div>
+    <div><span class="ok">Верно: ${n}</span> · <span class="no">Неверно: ${10-n}</span></div>
+    ${rows(res.filter(r=>!r.ok))||""}
+    <button class="btn p" id="again">Ещё раунд</button><button class="btn" id="hm">В меню</button>`;
+    document.getElementById("again").onclick=play;document.getElementById("hm").onclick=home}
+  show()}
+function map(){
+  const weak=Object.entries(S.wrong).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const soon=SOON.map(s=>s[0]);
+  app.innerHTML=`<h2>Карта тем</h2>
+  <button class="btn" id="t1">-ing / to / голый инфинитив<small>Доступно · раундов: ${S.played} · лучший: ${S.best==null?"—":S.best+"/10"}</small></button>
+  ${soon.map(s=>`<button class="btn" disabled>${s}<small>Скоро</small></button>`).join("")}
+  <h2>Слабые места</h2>${weak.length?weak.map(w=>`<div class="res"><b>${w[0]}</b><span class="no">×${w[1]}</span></div>`).join(""):'<div class="mut">Пока ошибок нет. Сыграй раунд.</div>'}
+  <button class="btn" id="hm">← В меню</button>`;
+  document.getElementById("t1").onclick=play;document.getElementById("hm").onclick=home}
+document.addEventListener("keydown",e=>{const m={ArrowRight:"g",ArrowLeft:"t",ArrowUp:"b"}[e.key];
+  if(m){const b=document.querySelector('[data-a="'+m+'"]');if(b){e.preventDefault();b.click()}}});
+home();
+</script>
+</body>
+</html>
